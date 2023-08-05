@@ -1,4 +1,11 @@
 # Drupalazy
+## Table of contents
+- [What is this stuff?](#scream-what-is-this-stuff)
+- [How to use it?](#anguished-how-to-use-it)
+- [How it works?](#construction-how-it-works)
+- [Creator and license](#bear-creator-and-license)
+
+## :scream: What is this stuff?
 
 Need to upgrade from Drupal 9 to Drupal 10 with a lot of modules or custom themes?
 
@@ -10,7 +17,7 @@ Need a simple and quick trick to avoid this chore?
 
 Here is **Drupalazy**: the Drupal tool for ~~lazy~~ productive people!
 
-## How to use it?
+## :anguished: How to use it?
 ### The fastest way
 - Open a terminal
 - Navigate to your Drupal installation path
@@ -19,7 +26,7 @@ Here is **Drupalazy**: the Drupal tool for ~~lazy~~ productive people!
 
 ### Alternative way
 If you don't trust a bearded man, you can download the `drupalazy.sh` file locally, proofread it, adapt it, give it execution rights and run it.
-## How it works?
+## :construction: How it works?
 When you run the script, a prompt appears and asks you for the Drupal installation path. By default, the current directory is pre-entered. You can, if necessary, modify or validate it.
 
 If the path entered is incorrect, an error appears and gives you a second chance!
@@ -38,6 +45,13 @@ Three possible cases :
 
 If you're a summary fanatic, there's one at the end of the script (and in addition, there is even a summary of the files in error)!
 
-Enjoy your coffee,
+## :bear: Creator and license
+Created by [Johnatas](https://github.com/johnatas-x).
+
+Please share the original open source tool and not a copy.
+
+Feel free to suggest improvements.
+
+Enjoy 🍻
 
 Johnatas
