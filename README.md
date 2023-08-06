@@ -17,6 +17,11 @@ Need a simple and quick trick to avoid this chore?
 
 Here is **Drupalazy**: the Drupal tool for ~~lazy~~ productive people!
 
+### Ahead of (or behind) time?
+Don't panic ! This tool also allows the upgrade from version 8 to 9.
+
+This tool is also already ready for an upgrade from 10 to 11.
+
 ## :anguished: How to use it?
 ### The fastest way
 - Open a terminal
@@ -25,7 +30,7 @@ Here is **Drupalazy**: the Drupal tool for ~~lazy~~ productive people!
 - Press enter on the first question
 
 ### Alternative way
-If you don't trust a bearded man, you can download the `drupalazy.sh` file locally, proofread it, adapt it, give it execution rights and run it.
+If you don't trust a bearded man, you can download the `drupalazy.sh` file locally (or clone this project), proofread it, adapt it, give it execution rights and run it.
 ## :construction: How it works?
 When you run the script, a prompt appears and asks you for the Drupal installation path. By default, the current directory is pre-entered. You can, if necessary, modify or validate it.
 

@@ -41,10 +41,23 @@ read_drupal_path() {
 }
 
 check_path() {
-  if [ ! -d "$DRUPAL_PATH/modules" ] || [ ! -d "$DRUPAL_PATH/themes" ]; then
-    echo-red "Incorrect installation path. This must contain the 'modules' and 'themes' folders."
+  if [ ! -d "$DRUPAL_PATH/core" ] || [ ! -d "$DRUPAL_PATH/modules" ] || [ ! -d "$DRUPAL_PATH/themes" ]; then
+    echo-red "Incorrect installation path. This must contain the 'core', 'modules' and 'themes' folders."
     read_drupal_path
   fi
+
+  check_version
+}
+
+check_version() {
+  local DRUPAL_FILE="$DRUPAL_PATH/core/lib/Drupal.php"
+  local VERSION
+  VERSION=$(sed -nr '/const VERSION = / s/.*const VERSION = ([^;]+).*/\1/p' "$DRUPAL_FILE" | tr -d "'")
+  SOURCE_VERSION=${VERSION%%.*}
+  TARGET_VERSION=$(( "$SOURCE_VERSION" + 1))
+
+  echo
+  echo-lavender-bg "Current core version : $VERSION \n↪ So, make files Drupal $TARGET_VERSION compatible."
 }
 
 files_counter() {
@@ -58,11 +71,11 @@ update_files() {
 
   for FILE_PATH in $(find "$UPDATE_PATH" | grep -F "$FILE_EXTENSION" | sort -k11); do
     echo -n "${FILE_PATH##*/}"
-    if grep -Eiq '\^10' "$FILE_PATH"; then
+    if grep -Eiq "\^$TARGET_VERSION" "$FILE_PATH"; then
       echo-yellow " ✔"
       (( COUNT_SKIPPED++ ))
-    elif grep -Eiq '\^9' "$FILE_PATH"; then
-      sed -i 's/\^9/\^9 || \^10/' "$FILE_PATH"
+    elif grep -Eiq "\^$SOURCE_VERSION" "$FILE_PATH"; then
+      sed -i "s/\^$SOURCE_VERSION/\^$SOURCE_VERSION || \^$TARGET_VERSION/" "$FILE_PATH"
       (( COUNT_OK++ ))
       echo-green " ✔"
     else
@@ -77,7 +90,7 @@ echo_recap() {
   echo
   echo-lavender-bg " Update recap "
   echo -n " - " && echo-green "$COUNT_OK file(s) successfully updated"
-  echo -n " - " && echo-yellow "$COUNT_SKIPPED file(s) skipped (already Drupal 10 compatible)"
+  echo -n " - " && echo-yellow "$COUNT_SKIPPED file(s) skipped (already Drupal $TARGET_VERSION compatible)"
   echo -n " - " && echo-red "$COUNT_KO file(s) not updated"
 
   if (( "$COUNT_KO" > 0 )); then
@@ -90,7 +103,8 @@ echo_recap() {
 }
 
 ### Script ###
-echo-lavender-bg " Start of .info update \n"
+echo-lavender-bg " Start of .info update "
+echo
 
 read_drupal_path
 files_counter
