@@ -61,8 +61,13 @@ check_version() {
 }
 
 files_counter() {
-  CUSTOM_MODULES=$(find "$DRUPAL_PATH/modules/custom" 2>"$REDIRECT_OUTPUT" | grep -Fc "$FILE_EXTENSION")
-  CUSTOM_THEMES=$(find "$DRUPAL_PATH/themes/custom" 2>"$REDIRECT_OUTPUT" | grep -Fc "$FILE_EXTENSION")
+  CUSTOM_MODULES=$(file_counter "modules")
+  CUSTOM_THEMES=$(file_counter "themes")
+  CUSTOM_PROFILES=$(file_counter "profiles")
+}
+
+file_counter() {
+  find "$DRUPAL_PATH/$1/custom" 2>"$REDIRECT_OUTPUT" | grep -Fc "$FILE_EXTENSION"
 }
 
 update_files() {
@@ -112,13 +117,19 @@ files_counter
 if (( "$CUSTOM_MODULES" > 0 )); then
   update_files "modules"
 else
-  echo-yellow "No custom module to process."
+  echo-yellow "\n----- No custom module to process -----"
 fi
 
 if (( "$CUSTOM_THEMES" > 0 )); then
   update_files "themes"
 else
-  echo-yellow "No custom theme to process."
+  echo-yellow "\n----- No custom theme to process -----"
+fi
+
+if (( "$CUSTOM_PROFILES" > 0 )); then
+  update_files "profiles"
+else
+  echo-yellow "\n----- No custom profile to process -----"
 fi
 
 echo_recap
