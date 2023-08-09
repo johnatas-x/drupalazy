@@ -1,9 +1,15 @@
 # Drupalazy
 ## Table of contents
+- [Prerequisite](#memo-prerequisite)
 - [What is this stuff?](#scream-what-is-this-stuff)
 - [How to use it?](#anguished-how-to-use-it)
 - [How it works?](#construction-how-it-works)
 - [Creator and license](#bear-creator-and-license)
+
+## :memo: Prerequisite
+- Drupal >= 8
+- Custom modules inside the directory `modules/custom`
+- Custom themes inside the directory `themes/custom`
 
 ## :scream: What is this stuff?
 
