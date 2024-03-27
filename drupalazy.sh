@@ -52,12 +52,30 @@ check_path() {
 check_version() {
   local DRUPAL_FILE="$DRUPAL_PATH/core/lib/Drupal.php"
   local VERSION
+  local MIN_DRUPAL_VERSION=8
+
+  if [ ! -f "$DRUPAL_FILE" ]; then
+    echo-red "An error has occurred. It seems that your current version of Drupal is < $MIN_DRUPAL_VERSION."
+    exit 0
+  fi
+
   VERSION=$(sed -nr '/const VERSION = / s/.*const VERSION = ([^;]+).*/\1/p' "$DRUPAL_FILE" | tr -d "'")
   SOURCE_VERSION=${VERSION%%.*}
-  TARGET_VERSION=$(( "$SOURCE_VERSION" + 1))
-
+  SUSPECTED_TARGET_VERSION=$(( "$SOURCE_VERSION" + 1))
+  echo-lavender-bg "Current core version : $VERSION"
+  version_choice
   echo
-  echo-lavender-bg "Current core version : $VERSION \n↪ So, make files Drupal $TARGET_VERSION compatible."
+  echo-lavender-bg "\n↪ Make files from Drupal $SOURCE_VERSION to Drupal $TARGET_VERSION compatible."
+}
+
+version_choice() {
+  # shellcheck disable=SC2116
+  read -erp "Which target version do you want the files to be compatible with? $(echo $'\n↪ Drupal ')" -i "$SUSPECTED_TARGET_VERSION" TARGET_VERSION
+
+  if [ "$TARGET_VERSION" -le "$SOURCE_VERSION" ]; then
+    echo-red "Incorrect target version. This must be > $SOURCE_VERSION."
+    version_choice
+  fi
 }
 
 files_counter() {
@@ -80,15 +98,22 @@ update_files() {
       echo-yellow " ✔"
       (( COUNT_SKIPPED++ ))
     elif grep -Eiq "\^$SOURCE_VERSION" "$FILE_PATH"; then
-      sed -i "s/\^$SOURCE_VERSION/\^$SOURCE_VERSION || \^$TARGET_VERSION/" "$FILE_PATH"
-      (( COUNT_OK++ ))
+      replace
       echo-green " ✔"
+      (( COUNT_OK++ ))
     else
       echo-red " ✘"
       (( COUNT_KO++ ))
       ERRORS[${#ERRORS[@]}]="$FILE_PATH"
     fi
   done
+}
+
+replace() {
+  local CURRENT_LAST_COMPATIBILITY
+  CURRENT_LAST_COMPATIBILITY=$(grep '^core_version_requirement' "$FILE_PATH" | sed -E 's/.*\^([0-9]+)[^0-9]*$/\1/' | tail -n1)
+  NEW_COMPATIBILITY="^$CURRENT_LAST_COMPATIBILITY || ^$TARGET_VERSION"
+  sed -i "s/\^$CURRENT_LAST_COMPATIBILITY/$NEW_COMPATIBILITY/" "$FILE_PATH"
 }
 
 echo_recap() {
