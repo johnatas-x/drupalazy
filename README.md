@@ -50,7 +50,7 @@ If the path is correct, the update begins.
 
 The script processes the modules first, then the themes and finally the profiles (in alphabetical order).
 
-This is where the magic happens (finally, this is where Sed replaces `^N` with `^N || ^N+n`).
+This is where the magic happens (finally, this is where Sed add a `|| ^N`).
 
 Three possible cases :
 - If the update worked, a nice little green check is added next to the file name.

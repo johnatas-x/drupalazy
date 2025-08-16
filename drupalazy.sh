@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 : '
-Use this script to massively update your custom .info files.
+Use this script to massively update your custom .info.yml files.
 
 Johnatas©
 '
@@ -50,19 +50,19 @@ check_path() {
 }
 
 check_version() {
-  local DRUPAL_FILE="$DRUPAL_PATH/core/lib/Drupal.php"
-  local VERSION
-  local MIN_DRUPAL_VERSION=8
+  local drupal_file="$DRUPAL_PATH/core/lib/Drupal.php"
+  local version
+  local min_drupal_version=8
 
-  if [ ! -f "$DRUPAL_FILE" ]; then
-    echo-red "An error has occurred. It seems that your current version of Drupal is < $MIN_DRUPAL_VERSION."
+  if [ ! -f "$drupal_file" ]; then
+    echo-red "An error has occurred. It seems that your current version of Drupal is < $min_drupal_version."
     exit 0
   fi
 
-  VERSION=$(sed -nr '/const VERSION = / s/.*const VERSION = ([^;]+).*/\1/p' "$DRUPAL_FILE" | tr -d "'")
-  SOURCE_VERSION=${VERSION%%.*}
+  version=$(sed -nr '/const VERSION = / s/.*const VERSION = ([^;]+).*/\1/p' "$drupal_file" | tr -d "'")
+  SOURCE_VERSION=${version%%.*}
   SUSPECTED_TARGET_VERSION=$(( "$SOURCE_VERSION" + 1))
-  echo-lavender-bg "Current core version : $VERSION"
+  echo-lavender-bg "Current core version : $version"
   version_choice
   echo
   echo-lavender-bg "\n↪ Make files from Drupal $SOURCE_VERSION to Drupal $TARGET_VERSION compatible."
@@ -92,28 +92,69 @@ update_files() {
   echo-green "\n----- Update custom $1 files -----"
   local UPDATE_PATH="$DRUPAL_PATH/$1/custom"
 
-  for FILE_PATH in $(find "$UPDATE_PATH" | grep -F "$FILE_EXTENSION" | sort -k11); do
+  for FILE_PATH in $(find "$UPDATE_PATH" -type f -name "*$FILE_EXTENSION" | sort); do
     echo -n "${FILE_PATH##*/}"
-    if grep -Eiq "\^$TARGET_VERSION" "$FILE_PATH"; then
-      echo-yellow " ✔"
-      (( COUNT_SKIPPED++ ))
-    elif grep -Eiq "\^$SOURCE_VERSION" "$FILE_PATH"; then
-      replace
-      echo-green " ✔"
-      (( COUNT_OK++ ))
-    else
-      echo-red " ✘"
+    local line
+    line=$(grep -E 'core_version_requirement' "$FILE_PATH")
+
+    if [ -z "$line" ]; then
+      echo-red " ✖"
       (( COUNT_KO++ ))
-      ERRORS[${#ERRORS[@]}]="$FILE_PATH"
+      ERRORS+=("$FILE_PATH")
+      continue
     fi
+
+    local value
+    value=$(echo "$line" | sed -E "s/^[[:space:]]*core_version_requirement:[[:space:]]*['\"]?(.*)['\"]?/\1/")
+    value=$(echo "$value" | sed -e 's/^["'\'']//; s/["'\'']$//')
+    # shellcheck disable=SC2016
+    escaped_target=$(printf '%s' "$TARGET_VERSION" | sed 's/[.[\*^$()+?{|]/\\&/g')
+
+    if echo "$value" | grep -Eiq "(^|\s|\|\|)[\^~]${escaped_target}"; then
+      skipped
+      continue
+    fi
+
+    if [[ "$value" == *">"* ]]; then
+      last_gt=${value##*>}
+      if [[ "$last_gt" != *"<"* ]]; then
+        skipped
+        continue
+      else
+        max_ver=${last_gt##*<}
+        if [ "$(echo "$max_ver > $TARGET_VERSION" | bc -l)" -eq 1 ]; then
+          skipped
+          echo "$last_gt"
+          continue
+        fi
+      fi
+    fi
+
+    if echo "$value" | grep -Eiq "(^|\s|\|\|)(<=|<)$((escaped_target + 1))($|\.)"; then
+      skipped
+      continue
+    fi
+
+    local new_value="$value || ^$TARGET_VERSION"
+    local quote=""
+
+    if echo "$line" | grep -q '"'; then
+      quote='"'
+    elif echo "$line" | grep -q "'"; then
+      quote="'"
+    fi
+
+    local escaped_new_value
+    escaped_new_value=$(printf '%s\n' "$new_value" | sed -e 's/[\/&|]/\\&/g')
+    sed -i -E "s|^(core_version_requirement:[[:space:]]*)['\"]?.*['\"]?|\1${quote}${escaped_new_value}${quote}|" "$FILE_PATH"
+    echo-green " ✔"
+    (( COUNT_OK++ ))
   done
 }
 
-replace() {
-  local CURRENT_LAST_COMPATIBILITY
-  CURRENT_LAST_COMPATIBILITY=$(grep '^core_version_requirement' "$FILE_PATH" | sed -E 's/.*\^([0-9]+)[^0-9]*$/\1/' | tail -n1)
-  NEW_COMPATIBILITY="^$CURRENT_LAST_COMPATIBILITY || ^$TARGET_VERSION"
-  sed -i "s/\^$CURRENT_LAST_COMPATIBILITY/$NEW_COMPATIBILITY/" "$FILE_PATH"
+skipped() {
+  echo-yellow " ✔"
+  (( COUNT_SKIPPED++ ))
 }
 
 echo_recap() {
@@ -135,7 +176,6 @@ echo_recap() {
 ### Script ###
 echo-lavender-bg " Start of .info update "
 echo
-
 read_drupal_path
 files_counter
 
@@ -158,5 +198,4 @@ else
 fi
 
 echo_recap
-
 exit 1
